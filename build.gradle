@@ -1,0 +1,50 @@
+apply plugin: 'java'
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+
+repositories {
+    mavenCentral()
+	
+	maven {
+        url "$System.env.ANDROID_HOME\\extras\\android\\m2repository"
+    }
+}
+
+tasks.withType(Test) {
+    scanForTestClasses = false
+    include "**/*Test.class" // whatever Ant pattern matches your test class files
+}
+
+configurations {
+	robolectricTestCompile.extendsFrom testCompile
+	robolectricTestRuntime.extendsFrom robolectricTestCompile
+}
+
+sourceSets {
+    robolectricTest {
+        java.srcDir file('src/robolectricTest/java')
+        resources.srcDir file('src/robolectricTest/resources')
+        
+		compileClasspath += sourceSets.main.runtimeClasspath
+		runtimeClasspath += sourceSets.main.runtimeClasspath
+    }
+}
+
+dependencies {
+	testCompile 'org.mockito:mockito-all:1.9.5'
+	testCompile 'junit:junit:4.11'
+	
+	robolectricTestCompile 'org.robolectric:robolectric:2.3'
+	
+	compile files("$System.env.ANDROID_HOME\\platforms\\android-19\\android.jar")
+}
+
+// add the unitTest task
+task robolectricTest(type:Test, dependsOn: assemble) {
+	description = "Run robolectric unit tests"
+	testClassesDir = project.sourceSets.robolectricTest.output.classesDir
+	classpath = project.sourceSets.robolectricTest.runtimeClasspath
+}
+robolectricTest.reports.html.destination = file("$buildDir/reports/robolectricTest")
+check.dependsOn robolectricTest
